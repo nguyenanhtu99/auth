@@ -1,26 +1,64 @@
 import React, { Component } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { Input, Button } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import firebase from 'firebase';
+import Spinner from './Spinner';
 
 class LoginForm extends Component {
 
     state = {
         email: '',
-        password: ''
+        password: '',
+        err: '',
+        loading: false
     }
 
     onSubmit() {
         const { email, password } = this.state;
 
+        this.setState({
+            err: '',
+            loading: true
+        })
+
         firebase.auth().signInWithEmailAndPassword(email, password)
         .then(() => {
             console.log('Success')
         })
-        .catch((err) => {
-            console.error(err.message)
-        })
+        .catch(() => {
+            firebase.auth().createUserWithEmailAndPassword(email, password)
+            .catch((err) => {
+                this.setState({
+                    err: err.message,
+                    loading: false
+                })
+            })
+        });
+    }
+
+    renderButton() {
+        if (this.state.loading) {
+            return <Spinner/>
+        }
+
+        return (
+                <Button
+                    icon={
+                    <Icon
+                        name="sign-in"
+                        size={30}
+                        color="red"
+                    />
+                    }
+                    title='Đăng nhập'
+                    type='outline'
+                    titleStyle={{color: 'red', fontSize: 20, padding: 30}}
+                    buttonStyle={{borderRadius: 50, borderColor: 'red', borderWidth: 1}}
+                    onPress={this.onSubmit.bind(this)}
+                    containerStyle={{padding: 5}}
+                />
+        )
     }
 
     render() {
@@ -52,21 +90,10 @@ class LoginForm extends Component {
                     value={this.state.password}
                     onChangeText={value => this.setState({password: value})}
                 />
-                <Button
-                    icon={
-                    <Icon
-                        name="sign-in"
-                        size={30}
-                        color="red"
-                    />
-                    }
-                    title='Đăng nhập'
-                    type='outline'
-                    titleStyle={{color: 'red', fontSize: 20, padding: 30}}
-                    buttonStyle={{borderRadius: 50, borderColor: 'red', borderWidth: 1}}
-                    onPress={this.onSubmit.bind(this)}
-                    containerStyle={{padding: 5}}
-                />
+                <Text style={{color: 'red', textAlign: 'center'}}>
+                    {this.state.err}
+                </Text>
+                {this.renderButton()}
             </View>
         )
     }
@@ -76,7 +103,8 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
-        alignItems: 'center'
+        alignSelf: 'center',
+        width: '90%'
     }
 })
 
